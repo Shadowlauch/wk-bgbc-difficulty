@@ -2,7 +2,7 @@ import fetch from 'node-fetch';
 
 (async () => {
   const response = await fetch("https://community.wanikani.com/posts/542488.json").then(r => r.json()) as Record<string, any>;
-  const regex = new RegExp(/\[([A-Za-z'\- ]*) Nomination Post]\(([^)]+)\)/g);
+  const regex = new RegExp(/\[([^\[\]]*) Nomination Post]\(([^)]+)\)/g);
   const matches = response.raw.matchAll(regex);
 
   for await (const match of matches) {
