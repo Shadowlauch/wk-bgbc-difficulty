@@ -5,6 +5,8 @@ import fetch from 'node-fetch';
   const regex = new RegExp(/\[([^\[\]]*) Nomination Post]\(([^)]+)\)/g);
   const matches = response.raw.matchAll(regex);
 
+  const under10 = [];
+
   for await (const match of matches) {
     const [, name, link] = match;
 
@@ -21,7 +23,16 @@ import fetch from 'node-fetch';
       votes += option.votes;
     }
 
-    console.log(`${name} - Difficulty: ${(sumDif / votes).toFixed(2)} - Votes: ${votes}`);
+    if (votes < 10) {
+      under10.push(`* [${name}](${link}) [${votes} votes]`);
+    }
+
+    console.log(`${name} - Difficulty: ${(sumDif / votes).toFixed(2)} [${votes} votes]`);
+  }
+
+  console.log()
+  for (const under10Element of under10) {
+    console.log(under10Element)
   }
 
 })();
