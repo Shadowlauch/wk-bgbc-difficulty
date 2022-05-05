@@ -99,7 +99,7 @@ const main = async (id: number, regex: RegExp, ongoing = false) => {
 
 };
 
-main(54575, /Death Note \| Week [0-9]+ Discussion/, true).then();
+main(54575, /Death Note \| Week [0-9]+ Discussion/, false).then();
 //main(54153, /極主夫道 \| Week [0-9]+ Discussion/).then();
 
 

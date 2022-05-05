@@ -2,18 +2,24 @@ import fetch from 'node-fetch';
 
 (async () => {
   const response = await fetch("https://community.wanikani.com/posts/542488.json").then(r => r.json()) as Record<string, any>;
-  const regex = new RegExp(/\[([^\[\]]*) Nomination Post]\(([^)]+)\)/g);
+  const nomRegex = new RegExp(/\[Nomination Post]\(([^)]+)\)/);
+  const natRegex = new RegExp(/\[Natively - (Level [0-9?]+)]\(([^)]+)\)/);
+  const levelRegex = new RegExp(/L[0-9?]+/);
+  const regex = new RegExp(/\[details="(Book|Manga) - (.+?(?="))"]([\S\s]*?(?=\[\/details]))\[\/details]/g);
   const matches = response.raw.matchAll(regex);
-
   const under10 = [];
 
   for await (const match of matches) {
-    const [, name, link] = match;
+    const [, type, name, content] = match;
 
-    const pos = parseInt(link.split('/').pop()) + 1;
-    const post = await fetch("https://community.wanikani.com/t/19766/posts.json?post_number=" + pos).then(r => r.json()) as Record<string, any>;
+    const [, nomLink] = content.match(nomRegex) ?? [];
+    const [, level, natLink] = content.match(natRegex) ?? [];
 
-    const poll = post.post_stream.posts[0].polls[0];
+    const pos = parseInt(nomLink.split('/').pop());
+    const thread = await fetch(`https://community.wanikani.com/t/19766/${pos}.json`).then(r => r.json()) as Record<string, any>;
+    const post = thread.post_stream.posts.find((p: any) => p.post_number === pos);
+
+    const poll = post.polls[0];
     let sumDif = 0;
     let votes = 0;
 
@@ -24,13 +30,31 @@ import fetch from 'node-fetch';
     }
 
     if (votes < 10) {
-      under10.push(`* [${name}](${link}) [${votes} votes]`);
+      under10.push(`* [${name}](${nomLink}) [${votes} votes]`);
     }
 
-    console.log(`${name} - Difficulty: ${(sumDif / votes).toFixed(2)} [${votes} votes]`);
+    let msgs = [];
+
+    const nativelySrc = await fetch(natLink).then(r => r.text()) as string;
+    const remoteLevel = nativelySrc.match(levelRegex)[0].replace('L', 'Level ');
+
+    if (remoteLevel !== level) {
+      msgs.push(remoteLevel);
+    }
+
+    const difString = `Difficulty: ${(sumDif / votes).toFixed(2)} [${votes} votes]`;
+    if (!content.includes(difString)) {
+      msgs.push(` - ${difString}`);
+    }
+
+    if (msgs.length > 0) {
+      console.log(`${name}`);
+      for (const msg of msgs) {
+        console.log(msg);
+      }
+    }
   }
 
-  console.log()
   for (const under10Element of under10) {
     console.log(under10Element)
   }
